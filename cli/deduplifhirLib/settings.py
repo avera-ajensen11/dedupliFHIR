@@ -18,6 +18,8 @@ import xml.etree.cElementTree as ET
 from typing import Any, Generator, List
 
 import pandas as pd
+from fhirclient.models.address import Address
+from fhirclient.models.patient import Patient
 from splink import SettingsCreator, block_on
 from splink.internals.blocking_rule_creator import BlockingRuleCreator
 from splink.internals.comparison_creator import ComparisonCreator
@@ -109,7 +111,7 @@ def create_settings(parsed_data_df: pd.DataFrame):
                            em_convergence=settings.em_convergence)
 
 
-def parse_fhir_dates(fhir_json_obj):
+def parse_fhir_dates(fhir_json_obj: Patient):
     """
     A generator function that parses the address portion of a FHIR file
     into a dictionary object that can be added to the overall patient record
@@ -120,14 +122,14 @@ def parse_fhir_dates(fhir_json_obj):
     Returns:
         A generator containing dictionaries of address data.
     """
-    addresses = fhir_json_obj['entry'][0]['resource']['address']
+    addresses: list[Address] = fhir_json_obj.address
 
-    for addr, n in enumerate(sorted(addresses)):
+    for n, addr in enumerate(sorted(addresses)):
         yield {
-            f"street_address{n}": [normalize_addr_text(''.join(addr['line']))],
-            f"city{n}": [normalize_addr_text(addr['city'])],
-            f"state{n}": [normalize_addr_text(addr['state'])],
-            f"postal_code{n}": [normalize_addr_text(addr['postalCode'])]
+            f"street_address{n}": [normalize_addr_text(''.join(addr.line))],
+            f"city{n}": [normalize_addr_text(addr.city)],
+            f"state{n}": [normalize_addr_text(addr.state)],
+            f"postal_code{n}": [normalize_addr_text(addr.postalCode)]
         }
 
 
@@ -146,7 +148,9 @@ def read_fhir_data(patient_record_path: str) -> pd.DataFrame:
     """
     try:
         with open(patient_record_path, "r", encoding="utf-8") as fdesc:
-            patient_json_record = json.load(fdesc)
+            patient_json_record_temp = json.load(fdesc)
+
+        patient = Patient(patient_json_record_temp, strict=False)
     except Exception as e:
         print(e)
         print(f"File: {patient_record_path}")
@@ -154,22 +158,22 @@ def read_fhir_data(patient_record_path: str) -> pd.DataFrame:
 
     patient_dict = {
         "unique_id": uuid.uuid4().int,
-        "family_name": [normalize_name_text(patient_json_record['entry'][0]['resource']['name'][0]['family'])],
-        "given_name": [normalize_name_text(patient_json_record['entry'][0]['resource']['name'][0]['given'][0])],
-        "gender": [patient_json_record['entry'][0]['resource']['gender']],
-        "birth_date": normalize_date_text(patient_json_record['entry'][0]['resource']['birthDate']),
-        "phone": [patient_json_record['entry'][0]['resource']['telecom'][0]['value']],
-        "ssn": [patient_json_record['entry'][0]['resource']['identifier'][1]['value']],
+        "family_name": [normalize_name_text(patient.name[0].family)],
+        "given_name": [normalize_name_text(patient.name[0].given[0])],
+        "gender": [patient.gender],
+        "birth_date": normalize_date_text(patient.birthDate.as_json()),
+        "phone": [patient.telecom.value],
+        "ssn": [patient.identifier[0].value],  # TODO figure out why this was pulling from index 1, instead of pulling by something such as the 'use' property in 'identifier'
         "path": patient_record_path
     }
 
     try:
-        patient_dict["middle_name"] = [normalize_name_text(patient_json_record['entry'][0]['resouce']['name'][0]['given'][1])]
+        patient_dict["middle_name"] = [normalize_name_text(patient.name[0].given[1])]
     except IndexError:
         patient_dict["middle_name"] = [""]
         print("no middle name found!")
 
-    for date in parse_fhir_dates(patient_json_record):
+    for date in parse_fhir_dates(patient):
         patient_dict.update(date)
 
     return pd.DataFrame(patient_dict)

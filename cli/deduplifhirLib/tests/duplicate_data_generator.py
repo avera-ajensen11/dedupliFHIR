@@ -4,22 +4,23 @@ Taken from https://github.com/thomaswyrick/duplicate-data-generator
 
 This is a modified wrapper script to generate data using the Faker library
 """
+import glob
 import json
 import os
-import glob
-import time
-import shutil
 import random
-import uuid
+import shutil
 import string
-from multiprocessing import Pool
+import time
+import uuid
 from math import ceil
-import pandas as pd
+from multiprocessing import Pool
+
 import numpy as np
+import pandas as pd
 from faker import Faker
 
 
-def generate_dup_data(column_file,output_name,rows,duprate,localization='en_US',batchsize=10000):
+def generate_dup_data(column_file, output_name, rows, duprate, localization='en_US', batchsize=10000):
     """
     This function generates mock patient data and saves it to a CSV
 
@@ -43,10 +44,10 @@ def generate_dup_data(column_file,output_name,rows,duprate,localization='en_US',
     }
     #vars(parser.parse_args())
 
-    with open(config['column_file_path'],encoding="utf-8") as column_file:
+    with open(config['column_file_path'], encoding="utf-8") as column_file:
         col_config = json.load(column_file)
 
-    config.update(col_config) # append column settings to main config dict
+    config.update(col_config)  # append column settings to main config dict
 
     start = time.time()
     fake_gen = Faker(config['localization'])
@@ -58,6 +59,7 @@ def generate_dup_data(column_file,output_name,rows,duprate,localization='en_US',
     end = time.time()
     print(f"Elapsed time (sec) : {end-start}")
     print('Fin!')
+
 
 def fix_aggregated_files(config):
     """
@@ -76,6 +78,7 @@ def fix_aggregated_files(config):
     main_file.index.name = 'id'
     main_file.to_csv(config['output_file'])
 
+
 def generate_temp_files(config, fake_gen):
     """
     Generates each batch inside a specific temp file asychronously
@@ -92,13 +95,11 @@ def generate_temp_files(config, fake_gen):
         create_temp_directory(tmp_dir)
 
         batch_size = config['batch_size']
-        num_batches = ceil(config['total_row_cnt']/batch_size)
+        num_batches = ceil(config['total_row_cnt'] / batch_size)
         remaining_rows = config['total_row_cnt']
 
         for _ in range(num_batches):
-            pool.apply_async(
-                create_fake_data_file, args = (
-                    config, fake_gen, tmp_dir, batch_size, remaining_rows))
+            pool.apply_async(create_fake_data_file, args=(config, fake_gen, tmp_dir, batch_size, remaining_rows))
         pool.close()
         pool.join()
     return tmp_dir
@@ -139,11 +140,9 @@ def create_fake_data_file(config, fake_gen, tmp_dir, batch_size, remaining_rows)
         rows_to_process = remaining_rows
     remaining_rows = remaining_rows - rows_to_process
 
-    num_of_initial_rows, num_duplicated_rows = get_row_counts(
-        rows_to_process, config['duplication_rate'])
+    num_of_initial_rows, num_duplicated_rows = get_row_counts(rows_to_process, config['duplication_rate'])
     try:
-        fake_data = get_fake_data(
-            num_of_initial_rows, num_duplicated_rows, config['columns'], fake_gen)
+        fake_data = get_fake_data(num_of_initial_rows, num_duplicated_rows, config['columns'], fake_gen)
         temp_file_name = os.path.join(tmp_dir, str(uuid.uuid4()))
         print(f"Writing {rows_to_process} rows to file")
         fake_data.to_csv(temp_file_name, header=False)
@@ -164,6 +163,7 @@ def create_temp_directory(tmp_dir):
         shutil.rmtree(tmp_dir)
     os.mkdir(tmp_dir)
 
+
 def get_fake_data(num_of_initial_rows, num_duplicated_rows, columns, fake_gen):
     """
     Creates fake data and stores it in a pandas dataframe
@@ -182,9 +182,7 @@ def get_fake_data(num_of_initial_rows, num_duplicated_rows, columns, fake_gen):
         if 'fill_rate' in column:
             fill_rate = column['fill_rate'] * 100
 
-        fake_strings = [
-            get_fake_string(column['type'], fake_gen, fill_rate) for x in range(num_of_initial_rows)
-        ]
+        fake_strings = [get_fake_string(column['type'], fake_gen, fill_rate) for x in range(num_of_initial_rows)]
         initial_fake_data[column['name']] = fake_strings
 
     initial_fake_data.insert(0, 'truth_value', '')
@@ -195,12 +193,10 @@ def get_fake_data(num_of_initial_rows, num_duplicated_rows, columns, fake_gen):
     for column in columns:
         if 'transposition_chars' in column and column['transposition_chars'] > 0:
             for _ in range(column['transposition_chars']):
-                known_duplicates[column['name']] = known_duplicates[column['name']].apply(
-                    transposition_chars)
+                known_duplicates[column['name']] = known_duplicates[column['name']].apply(transposition_chars)
         if 'mistype_chars' in column and column['mistype_chars'] > 0:
             for _ in range(column['mistype_chars']):
-                known_duplicates[column['name']] = known_duplicates[column['name']].apply(
-                    transposition_chars)
+                known_duplicates[column['name']] = known_duplicates[column['name']].apply(transposition_chars)
 
     output_data = pd.concat([initial_fake_data, known_duplicates])
     return output_data
@@ -222,7 +218,7 @@ def get_row_counts(total_row_cnt, duplication_rate):
 
     num_of_initial_rows = int(total_row_cnt - int(total_row_cnt * duplication_rate))
     num_duplicated_rows = int(total_row_cnt - num_of_initial_rows)
-    return num_of_initial_rows,num_duplicated_rows
+    return num_of_initial_rows, num_duplicated_rows
 
 
 def get_fake_string(fake_type, fake_gen, fill_rate):
@@ -243,7 +239,7 @@ def get_fake_string(fake_type, fake_gen, fill_rate):
     gender = np.random.choice(["M", "F"], p=[0.5, 0.5])
 
     if fake_type == 'first_name':
-        return fake_gen.first_name_male() if gender=="M" else fake_gen.first_name_female()
+        return fake_gen.first_name_male() if gender == "M" else fake_gen.first_name_female()
         #return fake_gen.first_name()
     if fake_type == 'last_name':
         return fake_gen.last_name()
@@ -273,6 +269,7 @@ def get_fake_string(fake_type, fake_gen, fill_rate):
     if fake_type == 'date_of_birth':
         return fake_gen.date_of_birth(minimum_age=18, maximum_age=95).strftime('%m/%d/%Y')
 
+
 def transposition_chars(str_to_alter):
     """
     Alters and adds errors to a string
@@ -284,9 +281,9 @@ def transposition_chars(str_to_alter):
         Altered input string
     """
 
-    if  str_to_alter is None or len(str_to_alter) < 1:
+    if str_to_alter is None or len(str_to_alter) < 1:
         return str_to_alter
-    first_char = random.randrange(len(str_to_alter)-1)
+    first_char = random.randrange(len(str_to_alter) - 1)
     second_char = first_char + 1
     split_str = [*str_to_alter]
     tmp = split_str[first_char]
@@ -294,6 +291,7 @@ def transposition_chars(str_to_alter):
     split_str[second_char] = tmp
     str_to_alter = ''.join(split_str)
     return str_to_alter
+
 
 def mistype_chars(str_to_alter):
     """

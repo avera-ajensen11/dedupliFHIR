@@ -6,12 +6,13 @@ functionality using Splink.
 
 import os
 import tempfile
-import pytest
+
 import pandas as pd
+import pytest
 from click.testing import CliRunner
+
 from cli.deduplifhirLib.tests.duplicate_data_generator import generate_dup_data
 from cli.ecqm_dedupe import dedupe_data
-
 
 
 @pytest.fixture
@@ -23,12 +24,7 @@ def generate_mock_data_fixture(request):
     """
     with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as temp_file:
         temp_file.close()
-        generate_dup_data(
-            os.path.join(
-                'deduplifhirLib','tests','test_data_columns.json'
-            ),
-            temp_file.name, rows=request.param, duprate=0.2
-        )
+        generate_dup_data(os.path.join('deduplifhirLib', 'tests', 'test_data_columns.json'), temp_file.name, rows=request.param, duprate=0.2)
         sample_df = pd.read_csv(temp_file.name)
         assert sample_df.shape[0] == request.param, f"Expected {request.param} deduplicated records"
         print(sample_df)
@@ -43,13 +39,14 @@ def cli_runner():
     """
     return CliRunner()
 
+
 def test_dedupe_data_with_csv_output(cli_runner):
     """
     Test dedupe_data function with CSV output format.
     """
 
     # Prepare test data paths
-    bad_data_path = os.path.join('deduplifhirLib','tests','test_data.csv')
+    bad_data_path = os.path.join('deduplifhirLib', 'tests', 'test_data.csv')
     output_path = 'output.csv'
     print(os.getcwd())
     # Simulate CLI command execution
@@ -64,6 +61,7 @@ def test_dedupe_data_with_csv_output(cli_runner):
 
     # Clean up: delete output file
     os.remove(output_path)
+
 
 def test_dedupe_data_with_specific_csv(cli_runner):
     """
@@ -85,7 +83,7 @@ def test_dedupe_data_with_specific_csv(cli_runner):
 726,04584982-ae7a-44a1-b4f0-e927a8bab0e1,uRssell,Lindasy,F,02/05/1977,,2110 Kmiberly Vilalges Apt. 639,New David,Wyoming,52082,2115-2-6S"""
 
     # Write test data to specific.csv
-    with open('specific.csv', 'w',encoding='utf-8') as f:
+    with open('specific.csv', 'w', encoding='utf-8') as f:
         f.write(test_data_csv)
 
     # Simulate CLI command execution
@@ -111,7 +109,7 @@ def test_dedupe_data_with_json_output(cli_runner):
     """
 
     # Prepare test data paths
-    bad_data_path = os.path.join('deduplifhirLib','tests','test_data.csv')
+    bad_data_path = os.path.join('deduplifhirLib', 'tests', 'test_data.csv')
     output_path = 'output.json'
 
     # Simulate CLI command execution
@@ -127,17 +125,18 @@ def test_dedupe_data_with_json_output(cli_runner):
     # Clean up: delete output file
     os.remove(output_path)
 
+
 def test_dedupe_data_with_invalid_format(cli_runner):
     """
     Test dedupe_data function with an invalid data format.
     """
 
     # Prepare invalid test data paths
-    bad_data_path = os.path.join('deduplifhirLib','tests','test_data_invalid.txt')
+    bad_data_path = os.path.join('deduplifhirLib', 'tests', 'test_data_invalid.txt')
     output_path = 'output.csv'
 
     # Write some invalid content to the test file
-    with open(bad_data_path, 'w',encoding='utf-8') as f:
+    with open(bad_data_path, 'w', encoding='utf-8') as f:
         f.write("This is not a valid CSV or JSON file content")
 
     # Simulate CLI command execution
@@ -151,6 +150,7 @@ def test_dedupe_data_with_invalid_format(cli_runner):
         os.remove(output_path)
     os.remove(bad_data_path)
 
+
 def test_dedupe_accuracy(cli_runner):
     """
     Test dedupe_data function for deduplication accuracy using a dataset with known duplicates.
@@ -161,7 +161,7 @@ def test_dedupe_accuracy(cli_runner):
     2,duplicate,Smyth,John,M,01/01/1990,,123 Elm St.,Springfield,IL,62701,123-45-6789
     3,unique,Doe,Jane,F,02/02/1992,,456 Oak St,Springfield,IL,62702,987-65-4321"""
 
-    with open('accuracy.csv', 'w',encoding='utf-8') as f:
+    with open('accuracy.csv', 'w', encoding='utf-8') as f:
         f.write(test_data_csv)
 
     # Simulate CLI command execution
@@ -178,11 +178,8 @@ def test_dedupe_accuracy(cli_runner):
     os.remove('output_accuracy.csv')
     os.remove('accuracy.csv')
 
-@pytest.mark.parametrize('generate_mock_data_fixture', [
-    1000,
-    5000,
-    2500
-],indirect=True)
+
+@pytest.mark.parametrize('generate_mock_data_fixture', [1000, 5000, 2500], indirect=True)
 def test_dedupe_data_with_large_dataset(generate_mock_data_fixture, cli_runner):
     """
     Test dedupe_data function with a large dataset.
