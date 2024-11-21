@@ -1,0 +1,6 @@
+[style]
+based_on_style = pep8
+column_limit = 180
+use_tabs = false
+indent_width = 4
+NO_SPACES_AROUND_SELECTED_BINARY_OPERATORS=|

@@ -1,0 +1,53 @@
+{
+  "stubPath": "./typings",
+  "include": ["cli"],
+  "exclude": ["**/node_modules", "**/__pycache__"],
+  "verboseOutput": false,
+
+  "typeCheckingMode": "standard",
+  /* 
+    Manually setting the below parameters, since these are params that are only set in strict mode.
+    But if we set 'typeCheckingMode' to 'strict', then we cannot downgrade any setting.
+
+    So therefore, we'll instead start at 'standard' checking mode, set each param below to their 'strict' value, and then downgrade as needed (marked with a line comment).
+  */
+  "reportAssertAlwaysTrue": "error",
+  "reportConstantRedefinition": "error",
+  "reportDeprecated": "error",
+  "reportDuplicateImport": "error",
+  "reportIncompleteStub": "error",
+  "reportInconsistentConstructor": "error",
+  "reportInvalidStringEscapeSequence": "error",
+  "reportInvalidStubStatement": "error",
+  "reportInvalidTypeVarUse": "error",
+  "reportMatchNotExhaustive": "error",
+  "reportMissingParameterType": "error",
+  "reportMissingTypeArgument": "error",
+  "reportMissingTypeStubs": "error",
+  "reportPrivateUsage": "error",
+  "reportSelfClsParameterName": "error",
+  "reportTypeCommentUsage": "error",
+  "reportUnknownArgumentType": "error",
+  "reportUnknownLambdaType": "error",
+  "reportUnknownMemberType": "information", // Downgrading this to 'information', since there might be issues with the 'pandas-stubs' package right now
+  "reportUnknownParameterType": "error",
+  "reportUnknownVariableType": "error",
+  "reportUnnecessaryCast": "error",
+  "reportUnnecessaryComparison": "error",
+  "reportUnnecessaryContains": "error",
+  "reportUnnecessaryIsInstance": "error",
+  "reportUnsupportedDunderAll": "error",
+  "reportUntypedBaseClass": "error",
+  "reportUntypedClassDecorator": "error",
+  "reportUntypedFunctionDecorator": "error",
+  "reportUntypedNamedTuple": "error",
+  "reportUnusedClass": "error",
+  "reportUnusedExpression": "error",
+  "reportUnusedFunction": "error",
+  "reportUnusedImport": "error",
+  "reportUnusedVariable": "error",
+  "reportWildcardImportFromLibrary": "error",
+  "strictDictionaryInference": true,
+  "strictListInference": true,
+  "strictSetInference": true
+}

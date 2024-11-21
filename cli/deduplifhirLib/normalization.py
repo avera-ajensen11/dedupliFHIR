@@ -2,9 +2,11 @@
 Module of functions that help to normalize fields of parsed patient data.
 """
 import re
+from typing import Any
+
 from dateutil import parser as date_parser
 from dateutil.parser import ParserError
-from text_to_num import alpha2digit
+from text_to_num.transforms import alpha2digit
 
 NAME_ABBREVIATION_SYMBOLS = {
     ' jr ': 'junior',
@@ -51,8 +53,8 @@ NAME_ABBREVIATION_SYMBOLS = {
     ' cfo ': 'chief financial officer'
 }
 
-PLACE_ABBREVIATION_SYMBOLS = {
-    ' st ' : 'st',
+PLACE_ABBREVIATION_SYMBOLS: dict[str, str] = {
+    ' st ': 'st',
     ' usa ': 'united states',
     ' gb ': 'great britain',
     ' street ': 'st',
@@ -177,20 +179,13 @@ def compile_abbreviation_map_regex(symbol_dict):
     #  keys in the abbreviation dictionary
     return re.compile('|'.join(re.escape(key) for key in symbol_dict.keys()))
 
-REPLACE_PLACE_NAME_SYMBOLS_PATTERN = compile_abbreviation_map_regex(
-    PLACE_ABBREVIATION_SYMBOLS
-)
 
-REPLACE_PROPER_NAME_SYMBOLS_PATTERN = compile_abbreviation_map_regex(
-    NAME_ABBREVIATION_SYMBOLS
-)
+REPLACE_PLACE_NAME_SYMBOLS_PATTERN = compile_abbreviation_map_regex(PLACE_ABBREVIATION_SYMBOLS)
+
+REPLACE_PROPER_NAME_SYMBOLS_PATTERN = compile_abbreviation_map_regex(NAME_ABBREVIATION_SYMBOLS)
 
 
-def replace_abbreviations(
-    input_text,
-    pattern=REPLACE_PLACE_NAME_SYMBOLS_PATTERN,
-    symbols=PLACE_ABBREVIATION_SYMBOLS
-    ):
+def replace_abbreviations(input_text: str, pattern: re.Pattern[str] = REPLACE_PLACE_NAME_SYMBOLS_PATTERN, symbols: dict[str, str] = PLACE_ABBREVIATION_SYMBOLS) -> str:
     """
     Normalizes common abbreviations with a pre-compiled regular expression.
 
@@ -200,6 +195,7 @@ def replace_abbreviations(
     Returns:
         The input string without the abbreviations.
     """
+
     # Define a function to use as the replacement argument in re.sub
     def replacer(match):
         return " " + symbols[match.group(0)] + " "
@@ -209,7 +205,7 @@ def replace_abbreviations(
     return pattern.sub(replacer, input_text)
 
 
-def remove_non_alphanum(input_text):
+def remove_non_alphanum(input_text: str) -> str:
     """
     Removes punctuation from the given string.
 
@@ -224,7 +220,8 @@ def remove_non_alphanum(input_text):
 
     return re.sub(r'[^a-zA-Z0-9 ]', '', input_text.replace(',', ' '))
 
-def british_to_american(input_text):
+
+def british_to_american(input_text: str) -> str:
     """
     Removes punctuation from the given string.
 
@@ -250,7 +247,7 @@ def british_to_american(input_text):
     return input_text
 
 
-def normalize_date_text(input_text):
+def normalize_date_text(input_text: str|Any):
     """
     Normalizes the given date string
 
@@ -273,7 +270,8 @@ def normalize_date_text(input_text):
         return input_text
     return d.strftime("%Y-%m-%d")
 
-def normalize_name_text(input_text):
+
+def normalize_name_text(input_text: str|Any):
     """
     Normalizes the given name string
 
@@ -288,14 +286,11 @@ def normalize_name_text(input_text):
     #text_copy = british_to_american(text_copy) Not needed
     #Replace abbreviations that occur in place names
     text_copy = remove_non_alphanum(text_copy)
-    text_copy = replace_abbreviations(
-        text_copy.lower(),
-        pattern=REPLACE_PROPER_NAME_SYMBOLS_PATTERN,
-        symbols=NAME_ABBREVIATION_SYMBOLS
-        )
+    text_copy = replace_abbreviations(text_copy.lower(), pattern=REPLACE_PROPER_NAME_SYMBOLS_PATTERN, symbols=NAME_ABBREVIATION_SYMBOLS)
     return text_copy.lower()
 
-def normalize_addr_text(input_text):
+
+def normalize_addr_text(input_text: str|Any):
     """
     Normalizes the given address string
 
@@ -309,7 +304,7 @@ def normalize_addr_text(input_text):
     text_copy = input_text
     #text_copy = british_to_american(text_copy) not needed
     try:
-        text_copy = alpha2digit(text_copy,"en")
+        text_copy = alpha2digit(text_copy, "en")
     except ValueError:
         ...
     text_copy = remove_non_alphanum(text_copy)
@@ -317,6 +312,7 @@ def normalize_addr_text(input_text):
     text_copy = replace_abbreviations(text_copy.lower())
 
     return text_copy.lower()
+
 
 if __name__ == "__main__":
 
@@ -331,4 +327,4 @@ if __name__ == "__main__":
     print(normalize_date_text(DATE_TEXT))
 
     NUM_TEXT = "I have one hundred twenty three apples and forty-five oranges. Valetnine"
-    print(alpha2digit(NUM_TEXT,'en'))
+    print(alpha2digit(NUM_TEXT, 'en'))

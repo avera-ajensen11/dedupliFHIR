@@ -85,3 +85,6 @@ training.json
 app/.data/*
 !app/.data/.keep
 deduped_record_mapping.*
+
+# 'pyright' auto-generated type stub dir, may remove this if any type stubs are created manually in the future
+typings/
