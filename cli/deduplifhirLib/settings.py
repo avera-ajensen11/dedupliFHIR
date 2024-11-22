@@ -163,7 +163,8 @@ def read_fhir_data(patient_record_path: str) -> pd.DataFrame:
         "gender": [patient.gender],
         "birth_date": normalize_date_text(patient.birthDate.as_json()),
         "phone": [patient.telecom.value],
-        "ssn": [patient.identifier[0].value],  # TODO figure out why this was pulling from index 1, instead of pulling by something such as the 'use' property in 'identifier'
+        # See CodeSystem codes here: https://terminology.hl7.org/6.1.0/CodeSystem-v2-0203.html
+        "ssn": [next((id.value for id in patient.identifier if next((coding for coding in id.type.coding if coding.code == "SS"), None)), None)],
         "path": patient_record_path
     }
 
